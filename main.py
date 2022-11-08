@@ -46,6 +46,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 def unauthorized(detail: str) -> HTTPException:
     return HTTPException(status_code=401, detail=detail, headers={"WWW-Authenticate": "Bearer"})
 
@@ -126,7 +127,6 @@ async def uploadCSV(current_user: User = Depends(dep_user),file: Union[UploadFil
                 return {"message": "File is not CSV"}
             else:
                 data = pd.read_csv(file.file)
-                # 檢查 contestants.json 是否存在
                 if os.path.exists("contestants.json"):
                     df = pd.read_json("contestants.json")
                     data = df.append(data, ignore_index=True)
@@ -135,14 +135,14 @@ async def uploadCSV(current_user: User = Depends(dep_user),file: Union[UploadFil
                 return status.HTTP_200_OK
     return status.HTTP_401_UNAUTHORIZED
     
-@app.post("/uploadVideo")
-async def uploadFile(current_user: User = Depends(dep_user),file: Union[UploadFile, None] = None):
+@app.post("/uploadVideo/{id}")
+async def uploadFile(current_user: User = Depends(dep_user),id: str = None,file: Union[UploadFile, None] = None):
     if current_user:
         if not file:
             return {"message": "No upload file sent"}
         else:
-            print("file.content_type",file.content_type)
-            with open(file.filename, "wb") as buffer:
+            filename = id + '.' + file.filename.split(".")[-1]
+            with open(filename, "wb") as buffer:
                 buffer.write(file.file.read())
             return status.HTTP_200_OK
     else:
@@ -176,6 +176,7 @@ async def getContestant(current_user: User = Depends(dep_user),contestant_id: st
     if current_user:
         data = pd.read_json("./contestants.json")
         contestant = data[data["id"] == contestant_id]
+
         return Response(content=contestant.to_json(orient="records"), media_type="application/json")
     else:
         return status.HTTP_401_UNAUTHORIZED
