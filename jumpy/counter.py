@@ -4,7 +4,8 @@ Created on Fri Jul 30 21:03:36 2021
 
 @author: charlie
 """
-from jumpy import codebase
+#from jumpy import codebase
+import codebase
 import numpy as np
 import os
 import pathlib
@@ -33,7 +34,7 @@ import cv2
 
 def jumpCounting(filename):
     list_area=[]
-    input_path = '../'+filename
+    input_path = './'+filename
     video_cap = cv2.VideoCapture(input_path)
 
     # Get some video parameters to generate output video with classificaiton.
@@ -53,7 +54,7 @@ def jumpCounting(filename):
     print("A-------------------A")
     print(pathlib.Path().absolute())
     print("A-------------------A")
-    pose_samples_folder = './Jump_csvs_out'
+    pose_samples_folder = './jumpy/Jump_csvs_out'
     pose_embedder = codebase.FullBodyPoseEmbedder()
 
     pose_classifier = codebase.PoseClassifier(
@@ -72,7 +73,7 @@ def jumpCounting(filename):
     import statistics
     import talib                        #EMA
     # Open output video. // 07360541/Videoname
-    out_video = cv2.VideoWriter('./Video_out/'+filename, cv2.VideoWriter_fourcc(*'mp4v'), video_fps, (video_width, video_height))
+    out_video = cv2.VideoWriter('./jumpy/Video_out/'+filename, cv2.VideoWriter_fourcc(*'mp4v'), video_fps, (video_width, video_height))
 
     frame_idx = 0
     output_frame = None
@@ -165,17 +166,22 @@ def jumpCounting(filename):
       print("=================================")    
       # Close output video.
       out_video.release()
-
+      
       # Release MediaPipe resources.
       pose_tracker.close()
+      
       contestant_id= filename.split('.')[0]
       data = pd.read_json("./contestants.json")
-      contestant = data[data["id"] == contestant_id]
       score = count-len(error)
-      for row in contestant.iterrows():
+      '''
+      for row in data[data["id"] == contestant_id].itertuples():
         row.score = score
+      '''
+      data['score'] = score
+      data.to_json("./contestants.json",orient='records')
+      
       return score
 
 if __name__ == '__main__':
-  jump = jumpCounting('A1102.MOV')
+  jump = jumpCounting('A1111.MOV')
   print(jump)
