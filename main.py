@@ -10,7 +10,9 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
-
+from jumpy import counter
+from threading import Thread
+import uvicorn
 
 # openssl rand -hex 32
 SECRET_KEY = "5548a81bf036952bf5e88b0e8f9e9617f6e019bba806484cfa77a911bdee4206"
@@ -136,14 +138,17 @@ async def uploadCSV(current_user: User = Depends(dep_user),file: Union[UploadFil
     return status.HTTP_401_UNAUTHORIZED
     
 @app.post("/uploadVideo/{id}")
-async def uploadFile(current_user: User = Depends(dep_user),id: str = None,file: Union[UploadFile, None] = None):
+async def uploadFile(current_user: User = Depends(dep_user),id: str = None,file: UploadFile = None):
     if current_user:
         if not file:
             return {"message": "No upload file sent"}
         else:
+            print(file.content_type)
             filename = id + '.' + file.filename.split(".")[-1]
             with open(filename, "wb") as buffer:
                 buffer.write(file.file.read())
+            #Thread(target = counter.jumpCounting , args =(filename,)).start()
+            
             return status.HTTP_200_OK
     else:
         return status.HTTP_401_UNAUTHORIZED
@@ -180,3 +185,6 @@ async def getContestant(current_user: User = Depends(dep_user),contestant_id: st
         return Response(content=contestant.to_json(orient="records"), media_type="application/json")
     else:
         return status.HTTP_401_UNAUTHORIZED
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
